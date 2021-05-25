@@ -8,6 +8,8 @@ import sys
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QMessageBox, QGraphicsOpacityEffect
 from PyQt5.QtGui import QPixmap, QImage, qRgb
+from PyQt5.QtCore import QCoreApplication, QObject
+
 
 
 
@@ -51,6 +53,8 @@ class App(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.setFixedSize(1280, 800)
+        self.setWindowTitle('졸음운전 방지 시스템')
 
         # 변수 초기화
         self.fps = 0.
@@ -65,7 +69,9 @@ class App(QWidget):
         self.y2 = 0
         self.running = False
         self.func = None
+        self.frame_loop_flag = True
         
+
         # GUI 그리는 부분
         self.initUI()
 
@@ -82,6 +88,17 @@ class App(QWidget):
         self.x2 = 0
         self.y1 = 0
         self.y2 = 0
+
+    def camera_release(self):
+        self.frame_loop_flag = False
+        
+            
+
+        
+            
+
+    
+
         
 
     def run(self):
@@ -98,12 +115,14 @@ class App(QWidget):
             print("모델 데이터 로드에 실패하였습니다.")
             exit()
 
+    
+
         frame  = CSI.readFrame() # 확인 필요!!!
 
         # 여기에 타이머 관련 코드 삽입
         def detectTimer():
             st = time.time()
-            timer = threading.Timer(1, detectTimer)
+            timer = threading.Timer(0.1, detectTimer)
             timer.name = "Detector_Timer"
             timer.daemon = True
 
@@ -117,7 +136,7 @@ class App(QWidget):
                     self.totalClosedCount += 1
                     print("Total Closed: " + str(self.totalClosedCount))
 
-                    if self.totalClosedCount >= 33:
+                    if self.totalClosedCount >= 150:
                         print("totalClosedCount is 10")
                         print("totalClosdCount" + str(self.totalClosedCount) + "totalLaunchTime" + str(self.totalLaunchTime))
                         if self.totalClosedCount / self.totalLaunchTime >= 0.15:
@@ -155,7 +174,7 @@ class App(QWidget):
         prevTime = 0 #FPS 계산용
         self.func = detectTimer
 
-        while True:
+        while self.frame_loop_flag:
             frame = CSI.readFrame()
             frame = cv2.resize(frame, dsize=(1280, 800), interpolation=cv2.INTER_LINEAR)
             if frame is None:
@@ -185,20 +204,26 @@ class App(QWidget):
             qImg = QImage(frame.data, w, h, w*c, QImage.Format_RGB888)
             pixmap = QPixmap.fromImage(qImg)
             self.video_display.setPixmap(pixmap)
-
-
-
+        
         CSI.releaseCamera()
-        cv2.destroyAllWindows()
-
+        
 
     def initUI(self):
 
         init_img = np.zeros((800, 1280), np.uint8)
 
-
         # 레이블 추가
         self.video_display = QLabel('', self)
+
+        # 카메라 해제 버튼
+        camera_release_Button = QPushButton('cap.release', self)
+        camera_release_Button.move(1280, 800)
+        camera_release_Button.setShortcut("q")
+
+        # 윈도우 닫기 버튼
+        close_Button = QPushButton('close', self)
+        close_Button.move(1280,850)
+        close_Button.setShortcut('ESC')
 
         # 화면 초기화
         init_img = numpyQImage(init_img)
@@ -215,18 +240,19 @@ class App(QWidget):
         stop_Button = QPushButton('', self)
         stop_Button.resize(400,400)
         stop_Button.setStyleSheet("image:url(./stop.png); border:0px;")
-        stop_Button.move(900,155)
+        stop_Button.move(800,100)
 
         # 버튼 기능 연결
         play_Button.clicked.connect(self.play)
         stop_Button.clicked.connect(self.stop)
+        camera_release_Button.clicked.connect(self.camera_release)
+        close_Button.clicked.connect(QCoreApplication.instance().quit)
 
-        self.setWindowTitle('졸음운전 방지 시스템')
-        self.setGeometry(0, 0, 1280, 800)
-
+        # 프레임 갱신 스레드 실행
         video_thread = threading.Thread(target=self.run)
         video_thread.daemon = True
         video_thread.start()
+
         self.show()
 
 

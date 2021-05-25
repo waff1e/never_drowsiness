@@ -25,8 +25,8 @@ class CSICamera:
     def openCamera(self):
         self.cam = cv2.VideoCapture(self.CreateGStreamer(), cv2.CAP_GSTREAMER)
         
-    def openCameraUSB(self, num):
-        self.cam = cv2.videoCapture(num)
+    def openCameraUSB(self, num=0):
+        self.cam = cv2.VideoCapture(num)
 
     def isCameraOpened(self):
         return self.cam.isOpened()

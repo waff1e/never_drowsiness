@@ -103,7 +103,7 @@ class App(QWidget):
 
     def run(self):
         CSI = CSICamera(640, 480, 640, 480, 30)
-        CSI.openCameraUSB()
+        CSI.openCamera()
 
         ED = EyeDetector('load_file')
 

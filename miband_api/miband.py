@@ -204,6 +204,9 @@ class miband(Peripheral):
         self._default_lost_device = fallback
         self._default_found_device = fallback
 
+    def disconnect(self):
+        return super().disconnect()
+
     def generateAuthKey(self):
         if(self.authKey):
             return struct.pack('<18s',b'\x01\x00'+ self.auth_key)

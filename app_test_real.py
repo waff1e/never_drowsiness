@@ -8,14 +8,41 @@ import threading
 import time
 import cv2
 
-
+screenState = 0
 
 CSI = CSICamera(640, 480, 1280, 800, 30)
 ED = EyeDetector('load_file')
 
-# MiBand Connection
-miband = mibandAPI("DB:28:14:20:F4:D0", "c2fa26313cba3df7cf0fe85f0e41dfe2")
-miband.initHeartRate()
+miband = None
+
+
+cv2.namedWindow("frame")
+
+#Miband Connection
+def loadingBand():
+    global screenState, miband
+    miband = mibandAPI("DB:28:14:20:F4:D0", "c2fa26313cba3df7cf0fe85f0e41dfe2")
+    miband.initHeartRate()
+
+    screenState = 281
+
+t = threading.Thread(target=loadingBand)
+t.start()
+
+
+while True:
+    drowloading = cv2.imread('images/loadingscreen.jpg')
+
+    cv2.imshow('frame', drowloading)
+    cv2.namedWindow('frame',cv2.WND_PROP_FULLSCREEN)
+    cv2.setWindowProperty('frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+    if screenState == 281:
+        break
+
+    if cv2.waitKey(1) == 27:
+        break
+
 
 strIsFace = "false" #얼굴 있는지 없는지
 strIsEyes = "false" #눈 있는지 없는지
@@ -43,7 +70,7 @@ if  CSI.isCameraOpened() is False:
     print("카메라에 연결되어있지 않습니다.")
     exit()
 
-cv2.namedWindow("frame")
+#cv2.namedWindow("frame")
 if ED.isModelNotLoaded():
     print("모델 데이터 로드에 실패하였습니다.")
     exit()
@@ -78,6 +105,7 @@ def detectTimer():
     if isFace is True:
         strIsFace = "true"
         if ED.DetectEyes(face_frame) is False:
+            strIsEyes = "false"
             #눈 감긴 상태
             # strIsEyes = "false"
             # if alertLevel < 5:
@@ -118,7 +146,7 @@ def detectTimer():
     timer.start()
 
 def heartRateTimer():
-    global currentHeartRate, alertLevel
+    global currentHeartRate, alertLevel, totalClosedCount, totalLaunchTime, miband
 
     timerHR = threading.Timer(0.01, heartRateTimer)
     timerHR.name = "HeartRate_Timer"
@@ -133,7 +161,7 @@ def heartRateTimer():
         currentHeartRate = tmpHeartRate
         debugPrint(currentHeartRate)
 
-        #96 대신 4퍼 깎인 수치 계산된거 적어라
+        #4% 이상 깎이면 알림 증가
         if currentHeartRate < deafaultHeartRate:
             if alertLevel < 5:
                 alertLevel += 1

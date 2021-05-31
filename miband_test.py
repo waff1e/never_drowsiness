@@ -10,18 +10,18 @@ async def looper():
     global t
     while True:
         miband.get_realtime()
-        currentHeartRate = int(miband.loadHeartRate())
-        if currentHeartRate != 0:
-            print(currentHeartRate())
+        #urrentHeartRate = int(miband.loadHeartRate())
+        #if currentHeartRate != 0:
+        #    print(currentHeartRate())
         
-        if (time.time() - t >= 12):
-            miband.requestHeartRate()
-            t = time.time()
+        #if (time.time() - t >= 12):
+        #    miband.requestHeartRate()
+        #    t = time.time()
 
 async def main():
     print("GET BAND FILE")
     future = asyncio.ensure_future(looper())
-    print("기다리십쇼 국민여러분 기다리십쇼")
+    print("GET")
     asyncio.sleep(3)
     while True:
         #print("나는 빡빡이다")

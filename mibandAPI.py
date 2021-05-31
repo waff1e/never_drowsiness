@@ -70,6 +70,8 @@ class mibandAPI:
     def requestHeartRate(self):
         return self.band.sendPingHeartRate()
 
+    def disconnect(self):
+        self.band.disconnect()
 
 
 # 원본 그대로의 코드

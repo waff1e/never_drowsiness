@@ -1,8 +1,11 @@
 from mibandAPI import *
 import numpy as np
 import time
+import threading
 import cv2
 import os
+
+miband = None
 level = 0
 
 cv2.namedWindow("img")
@@ -13,15 +16,15 @@ def clickEvents(event, x, y,flags, params):
     if event == cv2.EVENT_LBUTTONDOWN:
         if level == 0:   
             level = 1
-            print("ggggg")
+
         
         if level == 194:
             level = 725
 
 
 while True:
-    print("HHH")
-    img = cv2.imread('hrstart.jpg')
+
+    img = cv2.imread('images/hrbackground.jpg')
 
     cv2.imshow('img', img)
     cv2.setWindowProperty('img', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -33,13 +36,6 @@ while True:
     if cv2.waitKey(1) == 27: #ESC
         break
 
-#cv2.setWindowProperty('img', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-
-level = 194
-
-miband = mibandAPI("DB:28:14:20:F4:D0", "c2fa26313cba3df7cf0fe85f0e41dfe2")
-miband.initHeartRate()
-
 i = 0
 currentHeartRate = 0
 hrArr = []
@@ -47,41 +43,59 @@ result = 0
 
 hrTime = time.time()
 
+def loadingScreen():
+    global i, currentHeartRate, hrArr, result, level, hrTime
+    global miband
+
+    miband = mibandAPI("DB:28:14:20:F4:D0", "c2fa26313cba3df7cf0fe85f0e41dfe2")
+    miband.initHeartRate()
+
+    while True:
+
+        tmpHeartRate = miband.loadHeartRate()
+        if tmpHeartRate != 0:
+            currentHeartRate = tmpHeartRate
+            print("Realtime Heart BPM: " + str(currentHeartRate))
+            hrArr.append(currentHeartRate)
+            i += 1
+
+        if (time.time() - hrTime >= 12):
+            miband.requestHeartRate()
+            hrTime = time.time()
+        
+
+        if i == 2:
+            break
+
+    result = sum(hrArr) / len(hrArr)
+
+    with open('hrate.txt', 'w') as f:
+        f.write(str(result))
+
+    level = 194
+
+    print("Average HeartRate: " + str(result))
+
+        
+t = threading.Thread(target=loadingScreen)
+t.start()
+
 while True:
-    #cv2.imshow('img', img)
-    #cv2.setWindowProperty('img', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    #cv2.setMouseCallback('img', clickEvents)
+    img = cv2.imread('images/hrcalculate.jpg')
 
-    tmpHeartRate = miband.loadHeartRate()
-    if tmpHeartRate != 0:
-        currentHeartRate = tmpHeartRate
-        print(currentHeartRate)
-        hrArr.append(currentHeartRate)
-        i += 1
-
-    if (time.time() - hrTime >= 12):
-        miband.requestHeartRate()
-        hrTime = time.time()
-
-    img = cv2.imread('hrbackgrnd.jpg')
-    cv2.putText(img, str(currentHeartRate), (10, 600), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1, cv2.LINE_AA)
+    cv2.putText(img, "HR: " + str(currentHeartRate), (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (79, 79, 229), 2, cv2.LINE_AA)
     cv2.imshow('img', img)
+
     cv2.setWindowProperty('img', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    
+    cv2.setMouseCallback('img', clickEvents)
+    if level == 194:
+        break
 
-    if i == 3:
-        break;
-
-result = sum(hrArr) / len(hrArr)
-
-with open('hrate.txt', 'w') as f:
-    f.write(str(result))
-
-print(str(result))
-print("측정완료")
+    if cv2.waitKey(1) == 27:
+        break
 
 while True:
-    img = cv2.imread('hrbackgrnd2.jpg')
+    img = cv2.imread('images/hrbackground2.jpg')
     cv2.imshow('img', img)
 
     if cv2.waitKey(1) == 27: #ESC
@@ -89,6 +103,8 @@ while True:
 
     if level == 725:
         break
+
+miband.disconnect()
 
 cv2.destroyAllWindows()
 

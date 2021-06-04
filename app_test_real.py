@@ -115,7 +115,7 @@ def detectTimer():
             debugPrint("Total Closed: " + str(totalClosedCount))
             
             
-            if totalClosedCount >= 33:
+            if totalClosedCount >= 20:
                 debugPrint("totalClosedCount is 10")
                 debugPrint("totalClosedCount" + str(totalClosedCount) + "totalLaunchTime" + str(totalLaunchTime))
                 if totalClosedCount / totalLaunchTime >= 0.15:
@@ -148,7 +148,7 @@ def detectTimer():
 def heartRateTimer():
     global currentHeartRate, alertLevel, totalClosedCount, totalLaunchTime, miband
 
-    timerHR = threading.Timer(0.01, heartRateTimer)
+    timerHR = threading.Timer(10, heartRateTimer)
     timerHR.name = "HeartRate_Timer"
     timerHR.daemon = True
     tmpHeartRate = 0
@@ -163,11 +163,11 @@ def heartRateTimer():
 
         #4% 이상 깎이면 알림 증가
         if currentHeartRate < deafaultHeartRate:
-            if alertLevel < 5:
-                alertLevel += 1
-                AlertSound(alertLevel)
-            totalClosedCount = 0
-            totalLaunchTime = 0
+            if alertLevel == 0:
+                #alertLevel += 1
+                AlertSound(99)
+            #totalClosedCount = 0
+            #totalLaunchTime = 0
 
 
     timerHR.start()

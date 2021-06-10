@@ -13,7 +13,10 @@ screenState = 0
 CSI = CSICamera(640, 480, 1280, 800, 30)
 ED = EyeDetector('load_file')
 
+write_count = 0
+
 miband = None
+useMiBand = False
 
 
 cv2.namedWindow("frame")
@@ -26,8 +29,10 @@ def loadingBand():
 
     screenState = 281
 
-t = threading.Thread(target=loadingBand)
-t.start()
+t = None
+if useMiBand == True:
+    t = threading.Thread(target=loadingBand)
+    t.start()
 
 
 while True:
@@ -115,7 +120,7 @@ def detectTimer():
             debugPrint("Total Closed: " + str(totalClosedCount))
             
             
-            if totalClosedCount >= 20:
+            if totalClosedCount >= 10:
                 debugPrint("totalClosedCount is 10")
                 debugPrint("totalClosedCount" + str(totalClosedCount) + "totalLaunchTime" + str(totalLaunchTime))
                 if totalClosedCount / totalLaunchTime >= 0.15:
@@ -136,6 +141,11 @@ def detectTimer():
 
     else:
         strIsFace = "false"
+
+    # global write_count
+    # write_count += 1
+    # print("Write Count: " + str(write_count))
+    # cv2.imwrite(f'test001/{strIsEyes}/test_{write_count}.jpg', frame)
     
     totalLaunchTime += 1
     et =time.time()
@@ -148,7 +158,7 @@ def detectTimer():
 def heartRateTimer():
     global currentHeartRate, alertLevel, totalClosedCount, totalLaunchTime, miband
 
-    timerHR = threading.Timer(10, heartRateTimer)
+    timerHR = threading.Timer(30, heartRateTimer)
     timerHR.name = "HeartRate_Timer"
     timerHR.daemon = True
     tmpHeartRate = 0
@@ -173,7 +183,9 @@ def heartRateTimer():
     timerHR.start()
 
 detectTimer()
-heartRateTimer()
+if useMiBand == True:
+    heartRateTimer()
+
 
 prevTime = 0 #FPS 계산용
 hrTime = time.time()
@@ -188,9 +200,10 @@ while True:
     prevTime = curTime
     fps = 1/(sec)
 
-    if (time.time() - hrTime >= 12):
-        miband.requestHeartRate()
-        hrTime = time.time()
+    if useMiBand == True:
+        if (time.time() - hrTime >= 12):
+            miband.requestHeartRate()
+            hrTime = time.time()
 
     labFPS = "FPS: %0.1f" % fps
     labFace = f"Face: {strIsFace}"
@@ -213,9 +226,14 @@ while True:
         frame = np.concatenate((frame, stepimg), axis=0)
     
     cv2.imshow('frame', frame)
+    #write_count += 1
+    #print("Write Count: " + str(write_count))
+    #cv2.imwrite(f'test001/{strIsEyes}/test_{write_count}.jpg', frame)
 
     if cv2.waitKey(1) == 27: #ESC
         break
 
 CSI.releaseCamera()
+if useMiBand == True:
+    miband.disconnect()
 cv2.destroyAllWindows()

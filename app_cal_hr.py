@@ -64,13 +64,14 @@ def loadingScreen():
             hrTime = time.time()
         
 
-        if i == 2:
+        if i == 3:
             break
 
     result = sum(hrArr) / len(hrArr)
 
     with open('hrate.txt', 'w') as f:
-        f.write(str(result))
+        #f.write(str(result))
+        f.write("40")
 
     level = 194
 
